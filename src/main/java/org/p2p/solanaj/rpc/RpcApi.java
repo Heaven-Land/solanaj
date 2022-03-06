@@ -1,21 +1,12 @@
 package org.p2p.solanaj.rpc;
 
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.List;
+import java.util.*;
 
 import org.p2p.solanaj.core.Account;
 import org.p2p.solanaj.core.PublicKey;
 import org.p2p.solanaj.core.Transaction;
+import org.p2p.solanaj.rpc.types.*;
 import org.p2p.solanaj.rpc.types.ConfigObjects.*;
-import org.p2p.solanaj.rpc.types.AccountInfo;
-import org.p2p.solanaj.rpc.types.ConfirmedTransaction;
-import org.p2p.solanaj.rpc.types.ProgramAccount;
-import org.p2p.solanaj.rpc.types.RecentBlockhash;
-import org.p2p.solanaj.rpc.types.RpcSendTransactionConfig;
-import org.p2p.solanaj.rpc.types.SignatureInformation;
 import org.p2p.solanaj.rpc.types.RpcResultTypes.ValueLong;
 import org.p2p.solanaj.rpc.types.RpcSendTransactionConfig.Encoding;
 import org.p2p.solanaj.ws.SubscriptionWebSocketClient;
@@ -53,7 +44,7 @@ public class RpcApi {
     }
 
     public void sendAndConfirmTransaction(Transaction transaction, List<Account> signers,
-            NotificationEventListener listener) throws RpcException {
+                                          NotificationEventListener listener) throws RpcException {
         String signature = sendTransaction(transaction, signers);
 
         SubscriptionWebSocketClient subClient = SubscriptionWebSocketClient.getInstance(client.getEndpoint());
@@ -79,7 +70,7 @@ public class RpcApi {
         return client.call("getConfirmedTransaction", params, ConfirmedTransaction.class);
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public List<SignatureInformation> getConfirmedSignaturesForAddress2(PublicKey account, int limit)
             throws RpcException {
         List<Object> params = new ArrayList<Object>();
@@ -109,7 +100,7 @@ public class RpcApi {
         return getProgramAccounts(account, new ProgramAccountConfig(Encoding.base64));
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public List<ProgramAccount> getProgramAccounts(PublicKey account, ProgramAccountConfig programAccountConfig)
             throws RpcException {
         List<Object> params = new ArrayList<Object>();
@@ -162,6 +153,31 @@ public class RpcApi {
         params.add(lamports);
 
         return client.call("requestAirdrop", params, String.class);
+    }
+
+    public TokenAccountsByOwner getTokenAccountsByOwner(PublicKey ownerAddress, PublicKey mint, PublicKey programId) throws RpcException {
+
+        Objects.requireNonNull(ownerAddress);
+
+        if (mint == null && programId == null) {
+            throw new IllegalArgumentException("Exactly one parameter must be not null. Both 'mint' and 'programId' parameters are null");
+        }
+        if (mint != null && programId != null) {
+            throw new IllegalArgumentException("Exactly one parameter must be not null. Both 'mint' and 'programId' parameters are not null");
+        }
+
+        List<Object> params = new ArrayList<Object>();
+        params.add(ownerAddress.toString());
+
+        if (mint != null) {
+            params.add(Map.of("mint", mint.toString()));
+        } else if (programId != null) {
+            params.add(Map.of("programId", programId.toString()));
+        }
+
+        params.add(Map.of("encoding", "jsonParsed"));
+
+        return client.call("getTokenAccountsByOwner", params, TokenAccountsByOwner.class);
     }
 
 }

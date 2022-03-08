@@ -59,6 +59,7 @@ public class RpcApi {
         return client.call("getBalance", params, ValueLong.class).getValue();
     }
 
+    @Deprecated
     public ConfirmedTransaction getConfirmedTransaction(String signature) throws RpcException {
         List<Object> params = new ArrayList<Object>();
 
@@ -178,6 +179,21 @@ public class RpcApi {
         params.add(Map.of("encoding", "jsonParsed"));
 
         return client.call("getTokenAccountsByOwner", params, TokenAccountsByOwner.class);
+    }
+
+    public org.p2p.solanaj.rpc.types.Transaction getTransaction(String signature, CommitmentType commitment) throws RpcException {
+        var config = new HashMap<String, String>();
+        config.put("encoding", "json");
+        if (commitment != null) {
+            config.put("commitment", commitment.getValue());
+        }
+
+        List<Object> params = new ArrayList<Object>();
+
+        params.add(signature);
+        params.add(config);
+
+        return client.call("getTransaction", params, org.p2p.solanaj.rpc.types.Transaction.class);
     }
 
 }
